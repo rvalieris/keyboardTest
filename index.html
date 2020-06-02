@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<title>keyboard test</title>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/5.1.2/math.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<style>
+html, body, .container, .container .row {
+	height: 100%
+}
+.container {
+	max-width: 98%;
+}
+#stats {
+	font-family: monospace;
+}
+#reset {
+	margin: 1em;
+}
+</style>
+<script>
+$(function() {
+	var isHeld = {};
+	var prevTime = {};
+	var heldTime = {};
+	var chartData = {
+		"key-to-key": {
+			x: [],
+			name: 'key-to-key',
+			type: 'box',
+			boxpoints: 'all',
+			jitter: 0.3,
+			boxmean: 'sd'
+		},
+		"down-to-up": {
+			x: [],
+			name: 'down-to-up',
+			type: 'box',
+			boxpoints: 'all',
+			jitter: 0.3,
+			boxmean: 'sd'
+		}
+	};
+	Plotly.newPlot('chart', [chartData["key-to-key"], chartData["down-to-up"]]);
+
+	function updateKeyStatus() {
+		var buf = '';
+		Object.keys(isHeld).forEach(function(k) {
+			if(isHeld[k])
+			buf += "<div class='btn btn-outline-dark'>"+k+"</div> ";
+		});
+		$("#keystatus").html(buf);
+	}
+	function updateStats() {
+		var vals0 = chartData["key-to-key"].x;
+		var vals1 = chartData["down-to-up"].x;
+		var k2k_avg = 0, k2k_std = 0;
+		var d2u_avg = 0, d2u_std = 0;
+		if(vals0.length) { 
+			k2k_avg = math.mean(vals0);
+			k2k_std = math.std(vals0);
+		}
+		if(vals1.length) {
+			d2u_avg = math.mean(vals1);
+			d2u_std = math.std(vals1);
+		}
+		$("#stats").html(
+			"N: "+vals0.length+" | "+vals1.length+"<br/>"+
+			"key-to-key average: "+math.round(k2k_avg,2)+" mills<br/>"+
+			"key-to-key std-dev: "+math.round(k2k_std,2)+" mills<br/>"+
+			"dwn-to-up  average: "+math.round(d2u_avg,2)+" mills<br/>"+
+			"dnw-to-up  std-dev: "+math.round(d2u_std,2)+" mills"
+		);
+	}
+
+	$(window).keydown(function(event) {
+		var t = Date.now();
+		if(!isHeld[event.key]) {
+			if(prevTime[event.key]) {
+				var delta = t-prevTime[event.key];
+				Plotly.extendTraces('chart', {x:[[delta]]}, [0]);
+				//Plotly.extendTraces('chart', {x:[[t]], y:[[delta]]}, [0]);
+				//updateStats();
+				$("#log").prepend("keydown "+event.key+" "+delta+"<br/>");
+			}
+			isHeld[event.key] = true;
+			prevTime[event.key] = t;
+			heldTime[event.key] = t;
+			updateKeyStatus();
+		}
+		// else, key is repeating !
+	});
+	$(window).keyup(function(event) {
+		var t = Date.now();
+		if(heldTime[event.key] && isHeld[event.key]) {
+			var delta = t-heldTime[event.key];
+			//Plotly.extendTraces('chart', {x:[[t]], y:[[delta]]}, [1]);
+			Plotly.extendTraces('chart', {x:[[delta]]}, [1]);
+			//updateStats();
+			$("#log").prepend("keyup "+event.key+" "+delta+"<br/>");
+		}
+		delete isHeld[event.key];
+		delete heldTime[event.key];
+		updateKeyStatus();
+	});
+	$("#reset").click(function(event) {
+		//chartData["down-to-up"].x = [];
+		//chartData["key-to-key"].x = [];
+		chartData["down-to-up"].x = [];
+		chartData["key-to-key"].x = [];
+		updateStats();
+		isHeld = {};
+		prevTime = {};
+		heldTime = {};
+		Plotly.newPlot('chart', [chartData["key-to-key"], chartData["down-to-up"]]);
+		$("#log").html("");
+	});
+});
+</script>
+</head>
+<body>
+<div class='card'><div class='card-body' style='min-height: 5em' id='keystatus'></div></div>
+<button id='reset' class='btn btn-primary'>Reset</button>
+<div class='container'>
+	<div class='row'>
+		<div class='col-sm' style='margin: 1em'><div id='chart'></div></div>
+		<div class='col-sm' style='max-width: 20%; max-height:50%; overflow-y:auto' id='log'></div>
+	<!--	<div class='col-sm' id='stats'></div> -->
+	</div>
+</div>
+</body>
+</html>
