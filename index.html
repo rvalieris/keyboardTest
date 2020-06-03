@@ -8,8 +8,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/5.1.2/math.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <style>
-html, body, .container, .container .row {
+html, body {
 	height: 100%
+}
+.container, .container .row {
+	height: 70%
 }
 .container {
 	max-width: 98%;
@@ -117,6 +120,7 @@ $(function() {
 		heldTime = {};
 		Plotly.newPlot('chart', [chartData["key-to-key"], chartData["down-to-up"]]);
 		$("#log").html("");
+		$("#reset").blur(); // remove focus from the button
 	});
 });
 </script>
@@ -127,7 +131,7 @@ $(function() {
 <div class='container'>
 	<div class='row'>
 		<div class='col-sm' style='margin: 1em'><div id='chart'></div></div>
-		<div class='col-sm' style='max-width: 20%; max-height:50%; overflow-y:auto' id='log'></div>
+		<div class='col-sm' style='max-width: 20%; max-height:100%; overflow-y:auto' id='log'></div>
 	<!--	<div class='col-sm' id='stats'></div> -->
 	</div>
 </div>
